@@ -5,8 +5,129 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:EmailClient"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
+        Title="Email Client" Height="500" Width="800">
     <Grid>
+        <Grid.Resources>
+            <Style x:Key="lineStyle" TargetType="Line">
+                <Setter Property="Stroke" Value="Gray" />
+                <Setter Property="Stretch" Value="Fill" />
+                <Setter Property="Grid.ZIndex" Value="100" />
+                <Setter Property="StrokeDashArray" Value="1,2" />
+            </Style>
+
+            <Style x:Key="horizontalLineStyle" TargetType="Line" BasedOn="{StaticResource lineStyle}">
+                <Setter Property="X2" Value="1" />
+                <Setter Property="VerticalAlignment" Value="Bottom" />
+                <Setter Property="Grid.ColumnSpan" 
+                    Value="{Binding   
+                                Path=ColumnDefinitions.Count,  
+                                RelativeSource={RelativeSource AncestorType=Grid}}"/>
+            </Style>
+
+            <Style x:Key="verticalLineStyle" TargetType="Line" BasedOn="{StaticResource lineStyle}">
+                <Setter Property="Y2" Value="1" />
+                <Setter Property="HorizontalAlignment" Value="Right" />
+                <Setter Property="Grid.RowSpan"   
+                    Value="{Binding   
+                                Path=RowDefinitions.Count,  
+                                RelativeSource={RelativeSource AncestorType=Grid}}"/>
+            </Style>
+        </Grid.Resources>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="4"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <!-- Create and Search Area -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="250"/>
+                <ColumnDefinition Width="100"/>
+            </Grid.ColumnDefinitions>
+            <Button Width="100" HorizontalAlignment="Left" Grid.Column="0" Margin="5" Content="New" Command="{Binding CreateNewEmailCommand}"></Button>
+            <TextBox Grid.Column="1" Margin="5"></TextBox>
+            <Button Grid.Column="2" Margin="5" Content="Search" Command="{Binding SearchEmailCommand}"></Button>
+        </Grid>
+        <Line Grid.Row="1" Style="{StaticResource horizontalLineStyle}"/>
         
+        <!-- Main Content Area -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Line Grid.Column="1" Style="{StaticResource verticalLineStyle}"/>
+            
+            <!-- Folders Area -->
+            <Grid Grid.Column="0">
+            </Grid>
+            
+            <!-- Email Area -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="30"/>
+                </Grid.RowDefinitions>
+                <Line Grid.Row="0" Style="{StaticResource horizontalLineStyle}"/>
+                <Line Grid.Row="1" Style="{StaticResource horizontalLineStyle}"/>
+                
+                <!-- Sorting Buttons -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="50"/>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="75"/>
+                        <ColumnDefinition Width="40"/>
+                        <ColumnDefinition Width="40"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" Content="Sort by:"></Label>
+                    <Button Grid.Column="1" Margin="5" Width="90" Content="Date" Command="{Binding SortByDateCommand}"/>
+                    <Button Grid.Column="2" Margin="5" Width="90" Content="From" Command="{Binding SortByFromCommand}"/>
+                    <Label Grid.Column="3" Content="# to Display:"></Label>
+                    <Button Grid.Column="4" Margin="5" Width="30" Content="10" Command="{Binding DisplayTenCommand}"/>
+                    <Button Grid.Column="5" Margin="5" Width="30" Content="20" Command="{Binding DisplayTwentyCommand}"/>
+                </Grid>
+                
+                <!-- Email List -->
+                <Grid Grid.Row="1">
+                    <ListBox ItemsSource="{Binding Emails}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="130"/>
+                                        <ColumnDefinition Width="300"/>
+                                        <ColumnDefinition Width="100"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Margin="0,0,5,5" Grid.Column="0" Text="{Binding From}"/>
+                                    <TextBlock FontWeight="Bold" Margin="0,0,5,5" Grid.Column="1" Text="{Binding Subject}"/>
+                                    <TextBlock Margin="0,0,5,5" Grid.Column="2" Text="{Binding Date}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+                
+                <!-- Navigation -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="40"/>
+                        <ColumnDefinition Width="40"/>
+                        <ColumnDefinition Width="40"/>
+                        <ColumnDefinition Width="40"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="1" Margin="5" Width="30" Content="&lt;&lt;" Command="{Binding NavigateToFirstCommand}"/>
+                    <Button Grid.Column="2" Margin="5" Width="30" Content="&lt;" Command="{Binding NavigateToPrevCommand}"/>
+                    <Button Grid.Column="3" Margin="5" Width="30" Content="&gt;" Command="{Binding NavigateToNextCommand}"/>
+                    <Button Grid.Column="4" Margin="5" Width="30" Content="&gt;&gt;" Command="{Binding NavigateToLastCommand}"/>
+                </Grid>
+            </Grid>
+        </Grid>
     </Grid>
 </Window>
