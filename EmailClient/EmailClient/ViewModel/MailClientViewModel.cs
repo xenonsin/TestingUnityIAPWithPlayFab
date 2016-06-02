@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using EmailClient.Annotations;
 using EmailClient.Commands;
+using EmailClient.View;
 using MailKit;
 using MailKit.Net.Imap;
 using MimeKit;
@@ -35,12 +36,13 @@ namespace EmailClient.ViewModel
         // Email Commands
         public ICommand ShowEmailWindowCommand { get; }
         public ICommand DeleteEmailCommand { get; }
+        public ICommand RefreshEmailCommand { get; }
         
 
         // Observable Properties
         public  ObservableCollection<MimeMessage> Emails { get; set; } = new ObservableCollection<MimeMessage>();
+        public  ObservableCollection<IMailFolder> Folders { get; set; } = new ObservableCollection<IMailFolder>(); 
         private MimeMessage selectedEmail;
-
         public MimeMessage SelectedMessage
         {
             get { return selectedEmail; }
@@ -51,18 +53,32 @@ namespace EmailClient.ViewModel
             }
         }
 
+        private IMailFolder selectedFolder;
+
+        public IMailFolder SelectedFolder
+        {
+            get { return selectedFolder;}
+            set
+            {
+                selectedFolder = value;
+                OnPropertyChanged();
+            }
+        }
         public MailClientViewModel()
         {
             CreateNewEmailCommand = new Command(x => CreateNewEmail());
             SearchEmailCommand = new Command(x => SearchEmail());
 
             ShowEmailWindowCommand = new Command(x => ShowEmailWindow());
+            RefreshEmailCommand = new Command(x => RetrieveMail());
             RetrieveMail();
         }
 
         // retrieves mail
-        public void RetrieveMail()
+        private void RetrieveMail()
         {
+            Emails.Clear();
+            Folders.Clear();
             // connect to google 
             using (var client = new ImapClient())
             {
@@ -71,15 +87,30 @@ namespace EmailClient.ViewModel
                 client.Authenticate("ece433tester","thisclassman");
                 var inbox = client.Inbox;
                 inbox.Open(FolderAccess.ReadOnly);
-                Console.WriteLine("Total messages: {0}", inbox.Count);
-                Console.WriteLine("Recent messages: {0}", inbox.Recent);
-
                 for (int i = 0; i < inbox.Count; i++)
                 {
                     var message = inbox.GetMessage(i);
                     Emails.Add(message);
                     Console.WriteLine("Subject: {0}", message.Subject);
                 }
+                Folders.Add(client.Inbox);
+
+                if ((client.Capabilities & (ImapCapabilities.SpecialUse | ImapCapabilities.XList)) != 0)
+                {
+                    foreach (SpecialFolder folder in Enum.GetValues(typeof(SpecialFolder)))
+                    {
+                        var fold = client.GetFolder(folder);
+                        if (fold != null)
+                        {
+                            fold.Open(FolderAccess.ReadOnly);
+                            Folders.Add(client.GetFolder(folder));
+
+                        }
+
+                    }
+                }
+                if (Folders.Count > 0)
+                    selectedFolder = Folders[0];
 
                 client.Disconnect(true);
             }
@@ -89,6 +120,8 @@ namespace EmailClient.ViewModel
         private void CreateNewEmail()
         {
             // show popup dialog
+            var sendEmailWindow = new SendEmail();
+            sendEmailWindow.Show();
         }
 
         // searches the email list for a specific email
