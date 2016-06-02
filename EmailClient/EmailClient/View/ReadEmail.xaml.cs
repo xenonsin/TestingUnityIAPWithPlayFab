@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using EmailClient.ViewModel;
+using MimeKit;
 
 namespace EmailClient.View
 {
@@ -20,10 +21,10 @@ namespace EmailClient.View
     /// </summary>
     public partial class ReadEmail : Window
     {
-        public ReadEmail()
+        public ReadEmail(MimeMessage message)
         {
             InitializeComponent();
-            DataContext = new ReadEmailViewModel();
+            DataContext = new ReadEmailViewModel(message);
         }
     }
 }

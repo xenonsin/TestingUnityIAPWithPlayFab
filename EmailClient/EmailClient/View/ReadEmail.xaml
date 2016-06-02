@@ -5,11 +5,68 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:EmailClient.View"
         mc:Ignorable="d"
-        Title="ReadEmail" Height="300" Width="300">
+        Title="ReadEmail" Height="500" Width="400">
     <Grid>
+        <Grid.Resources>
+            <Style x:Key="lineStyle" TargetType="Line">
+                <Setter Property="Stroke" Value="Gray" />
+                <Setter Property="Stretch" Value="Fill" />
+                <Setter Property="Grid.ZIndex" Value="100" />
+                <Setter Property="StrokeDashArray" Value="1,2" />
+            </Style>
+
+            <Style x:Key="horizontalLineStyle" TargetType="Line" BasedOn="{StaticResource lineStyle}">
+                <Setter Property="X2" Value="1" />
+                <Setter Property="VerticalAlignment" Value="Bottom" />
+                <Setter Property="Grid.ColumnSpan" 
+                    Value="{Binding   
+                                Path=ColumnDefinitions.Count,  
+                                RelativeSource={RelativeSource AncestorType=Grid}}"/>
+            </Style>
+
+            <Style x:Key="verticalLineStyle" TargetType="Line" BasedOn="{StaticResource lineStyle}">
+                <Setter Property="Y2" Value="1" />
+                <Setter Property="HorizontalAlignment" Value="Right" />
+                <Setter Property="Grid.RowSpan"   
+                    Value="{Binding   
+                                Path=RowDefinitions.Count,  
+                                RelativeSource={RelativeSource AncestorType=Grid}}"/>
+            </Style>
+        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="30"/>
         </Grid.RowDefinitions>
+        <Line Grid.Row="0" Style="{StaticResource horizontalLineStyle}"/>
+        <Line Grid.Row="1" Style="{StaticResource horizontalLineStyle}"/>
+        <Line Grid.Row="2" Style="{StaticResource horizontalLineStyle}"/>
+        <Line Grid.Row="3" Style="{StaticResource horizontalLineStyle}"/>
+        <Line Grid.Row="4" Style="{StaticResource horizontalLineStyle}"/>
+        <Line Grid.Row="5" Style="{StaticResource horizontalLineStyle}"/>
+        <Label Grid.Row="0" Content="From:"/>
+        <TextBox Grid.Row="0" Margin="40,0,5,0" IsReadOnly="True" VerticalAlignment="Center" Text="{Binding FromField}"/>
+
+        <Label Grid.Row="1" Content="Cc:"/>
+        <TextBox Grid.Row="1" Margin="40,0,5,0" IsReadOnly="True" VerticalAlignment="Center" Text="{Binding CcField}"/>
+
+        <Label Grid.Row="2" Content="Date:"/>
+        <TextBox Grid.Row="2" Margin="40,0,5,0" IsReadOnly="True" VerticalAlignment="Center" Text="{Binding DateField}"/>
+
+        <Label Grid.Row="3" Content="Subj"/>
+        <TextBox Grid.Row="3" Margin="40,0,5,0" IsReadOnly="True" VerticalAlignment="Center" Text="{Binding SubjectField}"/>
+
+        <Button Grid.Row="4" Width="100" Margin="5" HorizontalAlignment="Left" Content="Download Attach" Command="{Binding DownloadAttachCommand}"/>
+        <Label Grid.Row="4" Margin="110,0,5,0" Content="{Binding AttachField, Mode=TwoWay}"/>
+
+        <TextBox Grid.Row="5" Margin="5" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AcceptsReturn="True"  VerticalAlignment="Stretch" Text="{Binding BodyField}"/>
+
+        <Button Grid.Row="6" Width="100" Margin="5" HorizontalAlignment="Center" Content="Forward" Command="{Binding ForwardCommand}"/>
+        <Button Grid.Row="6" Width="100" Margin="5" HorizontalAlignment="Left" Content="Delete" Command="{Binding DeleteCommand}"/>
+        <Button Grid.Row="6" Width="100" Margin="5" HorizontalAlignment="Right" Content="Reply" Command="{Binding ReplyCommand}"/>
     </Grid>
 </Window>

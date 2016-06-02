@@ -12,6 +12,7 @@ using EmailClient.Commands;
 using EmailClient.View;
 using MailKit;
 using MailKit.Net.Imap;
+using MailKit.Search;
 using MimeKit;
 
 namespace EmailClient.ViewModel
@@ -22,8 +23,8 @@ namespace EmailClient.ViewModel
         public ICommand SearchEmailCommand { get; }
 
         // Sorting Commands
-        public ICommand SortByDateCommand { get; }
-        public ICommand SortByFromCommand { get; }
+        public ICommand SortByDateDownCommand { get; }
+        public ICommand SortByDateUpCommand { get; }
 
         // Navigation Commands
         public ICommand DisplayTenCommand { get; }
@@ -37,64 +38,173 @@ namespace EmailClient.ViewModel
         public ICommand ShowEmailWindowCommand { get; }
         public ICommand DeleteEmailCommand { get; }
         public ICommand RefreshEmailCommand { get; }
-        
+        public ICommand ShowFolderCommand { get; }
 
         // Observable Properties
         public  ObservableCollection<MimeMessage> Emails { get; set; } = new ObservableCollection<MimeMessage>();
-        public  ObservableCollection<IMailFolder> Folders { get; set; } = new ObservableCollection<IMailFolder>(); 
-        private MimeMessage selectedEmail;
-        public MimeMessage SelectedMessage
+        public  ObservableCollection<IMailFolder> Folders { get; set; } = new ObservableCollection<IMailFolder>();
+        private List<SpecialFolder> folderTypes { get; set; } = new List<SpecialFolder>(); 
+        private int selectedEmailIndex;
+        public int SelectedEmailIndex
         {
-            get { return selectedEmail; }
+            get { return selectedEmailIndex; }
             set
             {
-                selectedEmail = value;
-                OnPropertyChanged();
+                if (value >= 0)
+                {
+                    selectedEmailIndex = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
-        private IMailFolder selectedFolder;
+        private int selectedFolderIndex = 0;
 
-        public IMailFolder SelectedFolder
+        public int SelectedFolderIndex
         {
-            get { return selectedFolder;}
+            get { return selectedFolderIndex; }
             set
             {
-                selectedFolder = value;
-                OnPropertyChanged();
+                if (selectedFolderIndex != value && value >= 0)
+                {
+                    selectedFolderIndex = value;
+                    OnPropertyChanged();
+                    ShowFolder();
+                }
             }
         }
         public MailClientViewModel()
         {
             CreateNewEmailCommand = new Command(x => CreateNewEmail());
-            SearchEmailCommand = new Command(x => SearchEmail());
-
+            DeleteEmailCommand = new Command(x => DeleteEmail());
             ShowEmailWindowCommand = new Command(x => ShowEmailWindow());
             RefreshEmailCommand = new Command(x => RetrieveMail());
+
+            SortByDateDownCommand = new Command(x => SortByDateDown());
+            SortByDateUpCommand = new Command(x => SortByDateUp());
             RetrieveMail();
         }
 
-        // retrieves mail
-        private void RetrieveMail()
+        private async void SortByDateDown()
         {
+            var folder = Folders[SelectedFolderIndex];
+            if (folder == null) return;
             Emails.Clear();
+            using (var client = new ImapClient())
+            {
+                await client.ConnectAsync("imap.gmail.com", 993, true);
+                client.AuthenticationMechanisms.Remove("XOAUTH2");
+                client.Authenticate("ece433tester", "thisclassman");
+                IMailFolder fold;
+                if (folder.Name == "INBOX")
+                {
+                    fold = client.Inbox;
+                    await fold.OpenAsync(FolderAccess.ReadOnly);
+                    for (int i = 0; i > fold.Count; i++)
+                    {
+                        try
+                        {
+                            var email = fold.GetMessage(i);
+                            Emails.Add(email);
+                        }
+                        catch (Exception)
+                        {
+
+                            throw;
+                        }
+                    }
+                }
+                else
+                {
+
+                    fold = client.GetFolder(folderTypes[SelectedFolderIndex - 1]);
+                    await fold.OpenAsync(FolderAccess.ReadOnly);
+                    for (int i = 0; i > fold.Count; i++)
+                    {
+                        try
+                        {
+                            var email = fold.GetMessage(i);
+                            Emails.Add(email);
+                        }
+                        catch (Exception)
+                        {
+
+                            throw;
+                        }
+                    }
+                }
+                client.Disconnect(true);
+            }
+        }
+
+        private async void SortByDateUp()
+        {
+            var folder = Folders[SelectedFolderIndex];
+            if (folder == null) return;
+            Emails.Clear();
+            using (var client = new ImapClient())
+            {
+                await client.ConnectAsync("imap.gmail.com", 993, true);
+                client.AuthenticationMechanisms.Remove("XOAUTH2");
+                client.Authenticate("ece433tester", "thisclassman");
+                IMailFolder fold;
+                if (folder.Name == "INBOX")
+                {
+                    fold = client.Inbox;
+                    await fold.OpenAsync(FolderAccess.ReadOnly);
+                    for (int i = fold.Count -1; i >= 0; i--)
+                    {
+                        try
+                        {
+                            var email = fold.GetMessage(i);
+                            Emails.Add(email);
+                        }
+                        catch (Exception)
+                        {
+
+                            throw;
+                        }
+                    }
+                }
+                else
+                {
+
+                    fold = client.GetFolder(folderTypes[SelectedFolderIndex - 1]);
+                    await fold.OpenAsync(FolderAccess.ReadOnly);
+                    for (int i = fold.Count - 1; i >= 0; i--)
+                    {
+                        try
+                        {
+                            var email = fold.GetMessage(i);
+                            Emails.Add(email);
+                        }
+                        catch (Exception)
+                        {
+
+                            throw;
+                        }
+                    }
+                }
+                client.Disconnect(true);
+            }
+            
+        }
+
+        // retrieves mail
+        private async void RetrieveMail()
+        {
             Folders.Clear();
+            Emails.Clear();
+            folderTypes.Clear();
             // connect to google 
             using (var client = new ImapClient())
             {
-                client.Connect("imap.gmail.com", 993, true);
+                await client.ConnectAsync("imap.gmail.com", 993, true);
                 client.AuthenticationMechanisms.Remove("XOAUTH2");
                 client.Authenticate("ece433tester","thisclassman");
                 var inbox = client.Inbox;
                 inbox.Open(FolderAccess.ReadOnly);
-                for (int i = 0; i < inbox.Count; i++)
-                {
-                    var message = inbox.GetMessage(i);
-                    Emails.Add(message);
-                    Console.WriteLine("Subject: {0}", message.Subject);
-                }
                 Folders.Add(client.Inbox);
-
                 if ((client.Capabilities & (ImapCapabilities.SpecialUse | ImapCapabilities.XList)) != 0)
                 {
                     foreach (SpecialFolder folder in Enum.GetValues(typeof(SpecialFolder)))
@@ -103,14 +213,14 @@ namespace EmailClient.ViewModel
                         if (fold != null)
                         {
                             fold.Open(FolderAccess.ReadOnly);
+                            folderTypes.Add(folder);
                             Folders.Add(client.GetFolder(folder));
-
                         }
 
                     }
                 }
-                if (Folders.Count > 0)
-                    selectedFolder = Folders[0];
+                
+                ShowFolder();
 
                 client.Disconnect(true);
             }
@@ -130,10 +240,100 @@ namespace EmailClient.ViewModel
             
         }
 
+        private async void DeleteEmail()
+        {
+            var folder = Folders[SelectedFolderIndex];
+            if (folder == null) return;
+            using (var client = new ImapClient())
+            {
+                await client.ConnectAsync("imap.gmail.com", 993, true);
+                client.AuthenticationMechanisms.Remove("XOAUTH2");
+                client.Authenticate("ece433tester", "thisclassman");
+                IMailFolder fold;
+                if (folder.Name == "INBOX")
+                {
+                    fold = client.Inbox;
+                    await fold.OpenAsync(FolderAccess.ReadWrite);
+                    fold.AddFlags(SelectedEmailIndex, MessageFlags.Deleted, true);
+                }
+                else if (folder.Name == "Trash")
+                {
+                    fold = client.GetFolder(SpecialFolder.Trash);
+                    fold.AddFlags(SelectedEmailIndex, MessageFlags.Deleted, true);
+                    fold.Expunge();
+                }
+                else
+                {
+
+                    fold = client.GetFolder(folderTypes[SelectedFolderIndex - 1]);
+                    await fold.OpenAsync(FolderAccess.ReadWrite);
+                    fold.AddFlags(SelectedEmailIndex, MessageFlags.Deleted, true);
+                }
+                RetrieveMail();
+                client.Disconnect(true);
+            }
+        }
+
         // shwo the email window
         private void ShowEmailWindow()
         {
-            Console.WriteLine("You double clicked!");
+            var readEmailWindow = new ReadEmail (Emails[SelectedEmailIndex]);
+            readEmailWindow.Show();
+        }
+
+        private async void ShowFolder()
+        {            
+            var folder = Folders[SelectedFolderIndex];
+            if (folder == null) return;
+            Emails.Clear();
+            using (var client = new ImapClient())
+            {
+                await client.ConnectAsync("imap.gmail.com", 993, true);
+                client.AuthenticationMechanisms.Remove("XOAUTH2");
+                client.Authenticate("ece433tester", "thisclassman");
+                IMailFolder fold;
+                if (folder.Name == "INBOX")
+                {
+                    fold = client.Inbox;
+                    await fold.OpenAsync(FolderAccess.ReadOnly);
+                    for (int i = 0; i < fold.Count; i++)
+                    {
+                        try
+                        {
+                            var email = fold.GetMessage(i);
+                            Emails.Add(email);
+                        }
+                        catch (Exception)
+                        {
+
+                            throw;
+                        }
+                    }
+                }
+                else
+                {
+                    if ((client.Capabilities & (ImapCapabilities.SpecialUse | ImapCapabilities.XList)) != 0)
+                    {
+                        fold = client.GetFolder(folderTypes[SelectedFolderIndex-1]);
+                        await fold.OpenAsync(FolderAccess.ReadOnly);
+                        for (int i = 0; i < fold.Count; i++)
+                        {
+                            try
+                            {
+                                var email = fold.GetMessage(i);
+                                Emails.Add(email);
+                            }
+                            catch (Exception)
+                            {
+
+                                throw;
+                            }
+                        }
+                    }
+                }
+                client.Disconnect(true);
+
+            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

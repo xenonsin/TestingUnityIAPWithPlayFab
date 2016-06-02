@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Input;
 using EmailClient.Annotations;
 using EmailClient.Commands;
+using EmailClient.View;
 using MailKit.Net.Smtp;
 using MimeKit;
 using MessageBox = System.Windows.MessageBox;
@@ -108,10 +111,82 @@ namespace EmailClient.ViewModel
         public ICommand SendCommand { get; }
         public Action CloseAction { get; set; }
 
-        public SendEmailViewModel()
+        public SendEmailViewModel(MimeMessage reply, SendEmail.SendType type)
         {
             AttachCommand = new Command(x => Attach());
             SendCommand = new Command(x => Send());
+            if (reply != null)
+            {
+                if (type == SendEmail.SendType.Reply)
+                { 
+                    // reply to the sender of the message
+                    if (reply.ReplyTo.Count > 0)
+                    {
+                        foreach (var mailboxAddress in reply.ReplyTo.Mailboxes)
+                        {
+                            ToField += mailboxAddress.Address + ", ";
+                        }
+                    }
+                    else if (reply.From.Count > 0)
+                    {
+                        foreach (var mailboxAddress in reply.From.Mailboxes)
+                        {
+                            ToField += mailboxAddress.Address + ", ";
+                        }
+
+                    }
+                    else if (reply.Sender != null)
+                    {
+                        ToField += reply.Sender.Address;
+
+                    }
+
+                    foreach (var mailboxAddress in reply.To.Mailboxes)
+                    {
+                        if (mailboxAddress.Address.Contains("ece433tester@gmail.com")) continue;
+                        ToField += mailboxAddress.Address + ", ";
+                    }
+
+                    foreach (var mailboxAddress in reply.Cc.Mailboxes)
+                    {
+                        ToField += mailboxAddress.Address + ", ";
+                    }
+                    
+
+                    if (!reply.Subject.StartsWith("Re:", StringComparison.OrdinalIgnoreCase))
+                        SubjectField = "Re: " + reply.Subject;
+                    else
+                        SubjectField = reply.Subject;
+
+                }
+                else if (type == SendEmail.SendType.Forward)
+                {
+                    if (!reply.Subject.StartsWith("Fwd:", StringComparison.OrdinalIgnoreCase))
+                        SubjectField = "Fwd: " + reply.Subject;
+                    else
+                        SubjectField = reply.Subject;
+                }
+
+                // quote the original message text
+                using (var quoted = new StringWriter())
+                {
+                    var sender = reply.Sender ?? reply.From.Mailboxes.FirstOrDefault();
+
+                    quoted.WriteLine("On {0}, {1} wrote:", reply.Date.ToString("f"), !string.IsNullOrEmpty(sender.Name) ? sender.Name : sender.Address);
+                    using (var reader = new StringReader(reply.TextBody))
+                    {
+                        string line;
+
+                        while ((line = reader.ReadLine()) != null)
+                        {
+                            quoted.Write("> ");
+                            quoted.WriteLine(line);
+                        }
+                    }
+
+                    BodyField = quoted.ToString();
+                }
+            }
         }
 
         // attach a file unto the email
@@ -149,8 +224,9 @@ namespace EmailClient.ViewModel
                 foreach (var address in toAddresses)
                 {
                     if (!address.Contains('@')) continue;
-                    string name = address.Split('@')[0];
-                    message.To.Add(new MailboxAddress(name, address));
+                    string name = address.Split('@')[0].Trim();
+                    string addr = address.Trim();
+                    message.To.Add(new MailboxAddress(name, addr));
                 }
             }
             // parse cc addresses
@@ -160,8 +236,9 @@ namespace EmailClient.ViewModel
                 foreach (var address in ccAddresses)
                 {
                     if (!address.Contains('@')) continue;
-                    string name = address.Split('@')[0];
-                    message.Cc.Add(new MailboxAddress(name, address));
+                    string name = address.Split('@')[0].Trim();
+                    string addr = address.Trim();
+                    message.Cc.Add(new MailboxAddress(name, addr));
                 }
             }
 
@@ -172,8 +249,9 @@ namespace EmailClient.ViewModel
                 foreach (var address in bccAddresses)
                 {
                     if (!address.Contains('@')) continue;
-                    string name = address.Split('@')[0];
-                    message.Bcc.Add(new MailboxAddress(name, address));
+                    string name = address.Split('@')[0].Trim();
+                    string addr = address.Trim();
+                    message.Bcc.Add(new MailboxAddress(name, addr));
                 }
             }
 
