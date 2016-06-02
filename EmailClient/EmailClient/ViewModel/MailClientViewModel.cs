@@ -32,14 +32,31 @@ namespace EmailClient.ViewModel
         public ICommand NavigateToNextCommand { get; }
         public ICommand NavigateToLastCommand { get; }
 
+        // Email Commands
+        public ICommand ShowEmailWindowCommand { get; }
+        public ICommand DeleteEmailCommand { get; }
+        
+
         // Observable Properties
         public  ObservableCollection<MimeMessage> Emails { get; set; } = new ObservableCollection<MimeMessage>();
-        
+        private MimeMessage selectedEmail;
+
+        public MimeMessage SelectedMessage
+        {
+            get { return selectedEmail; }
+            set
+            {
+                selectedEmail = value;
+                OnPropertyChanged();
+            }
+        }
+
         public MailClientViewModel()
         {
             CreateNewEmailCommand = new Command(x => CreateNewEmail());
             SearchEmailCommand = new Command(x => SearchEmail());
 
+            ShowEmailWindowCommand = new Command(x => ShowEmailWindow());
             RetrieveMail();
         }
 
@@ -78,6 +95,12 @@ namespace EmailClient.ViewModel
         private void SearchEmail()
         {
             
+        }
+
+        // shwo the email window
+        private void ShowEmailWindow()
+        {
+            Console.WriteLine("You double clicked!");
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

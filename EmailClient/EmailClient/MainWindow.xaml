@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:EmailClient"
+        xmlns:viewModel="clr-namespace:EmailClient.ViewModel"
         mc:Ignorable="d"
         Title="Email Client" Height="500" Width="800">
     <Grid>
@@ -83,21 +84,28 @@
                         <ColumnDefinition Width="75"/>
                         <ColumnDefinition Width="40"/>
                         <ColumnDefinition Width="40"/>
+                        <ColumnDefinition Width="100"/>
                     </Grid.ColumnDefinitions>
                     <Label Grid.Column="0" Content="Sort by:"></Label>
                     <Button Grid.Column="1" Margin="5" Width="90" Content="Date" Command="{Binding SortByDateCommand}"/>
                     <Button Grid.Column="2" Margin="5" Width="90" Content="From" Command="{Binding SortByFromCommand}"/>
                     <Label Grid.Column="3" Content="# to Display:"></Label>
-                    <Button Grid.Column="4" Margin="5" Width="30" Content="10" Command="{Binding DisplayTenCommand}"/>
+                    <Button Grid.Column="4" Margin="5" Width="30" Content="10" Command="{Binding DisplayTenCommand}"/>                    
                     <Button Grid.Column="5" Margin="5" Width="30" Content="20" Command="{Binding DisplayTwentyCommand}"/>
+                    <Button Grid.Column="6" Margin="5" Width="90" Content="Delete" Command="{Binding DeleteEmailCommand}"/>
+
                 </Grid>
                 
                 <!-- Email List -->
                 <Grid Grid.Row="1">
-                    <ListBox ItemsSource="{Binding Emails}">
+                    <ListBox ItemsSource="{Binding Emails}" SelectedItem="{Binding SelectedEmail}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid Margin="5">
+                                    <Grid.InputBindings>
+                                        <MouseBinding Gesture="LeftDoubleClick" Command="{Binding RelativeSource={RelativeSource FindAncestor, 
+                                            AncestorType={x:Type Window}}, Path=DataContext.ShowEmailWindowCommand}"/>
+                                    </Grid.InputBindings>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="130"/>
                                         <ColumnDefinition Width="300"/>
